@@ -3,7 +3,7 @@ include mk/hooks.mk
 
 CARGO_DENY_VERSION  ?= 0.20.2
 CARGO_AUDIT_VERSION ?= 0.22.2
-GITLEAKS ?= $(shell command -v gitleaks || echo $(HOME)/go/bin/gitleaks)
+GITLEAKS_VERSION    ?= v8.28.0
 
 .PHONY: tools fmt lint test test-integration security build check check-fast
 tools: hooks ## Instala toolchain e ferramentas pinadas e ativa os hooks
@@ -11,6 +11,8 @@ tools: hooks ## Instala toolchain e ferramentas pinadas e ativa os hooks
 	rustup show active-toolchain
 	rustup component add rustfmt clippy
 	cargo install --locked cargo-deny@$(CARGO_DENY_VERSION) cargo-audit@$(CARGO_AUDIT_VERSION)
+	@command -v go >/dev/null || { echo "instale Go (para o gitleaks): https://go.dev/dl"; exit 1; }
+	go install github.com/zricethezav/gitleaks/v8@$(GITLEAKS_VERSION)
 
 fmt: ## Formata
 	cargo fmt --all
