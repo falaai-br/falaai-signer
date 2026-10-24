@@ -4,6 +4,11 @@ all-features = true
 [advisories]
 version = 2
 yanked = "deny"
+ignore = [
+  # proc-macro de build (sem código em runtime) puxado pela libsignal: libcrux-ml-kem -> hax-lib.
+  # Sem versão corrigida e sem como trocar sem fork (ADR-0001). Mesmo caso do falaai-core.
+  { id = "RUSTSEC-2026-0173", reason = "proc-macro-error2 sem manutenção; transitivo da libsignal, só em build" },
+]
 
 [licenses]
 version = 2
@@ -14,7 +19,6 @@ allow = [
   "ISC", "Unicode-3.0", "Zlib", "CC0-1.0", "MPL-2.0", "BSL-1.0",
 ]
 confidence-threshold = 0.9
-# A lista vale para as dependências que a libsignal vai trazer; não avisar sobre as ainda ausentes.
 unused-allowed-license = "allow"
 
 [bans]
@@ -25,8 +29,6 @@ allow-wildcard-paths = true
 [sources]
 unknown-registry = "deny"
 unknown-git = "deny"
-# A libsignal entra na bead seguinte; até lá a organização não aparece no grafo.
-unused-allowed-org = "allow"
-# Fontes git só da organização da Signal (libsignal e os forks que ela usa: boring, curve25519-dalek, SPQR).
-[sources.allow-org]
-github = ["signalapp"]
+unused-allowed-source = "allow"
+# Fontes git só da Signal: a libsignal e os forks que ela usa (como no falaai-core).
+allow-git = ["https://github.com/signalapp/libsignal", "https://github.com/signalapp/SparsePostQuantumRatchet", "https://github.com/signalapp/boring", "https://github.com/signalapp/curve25519-dalek"]

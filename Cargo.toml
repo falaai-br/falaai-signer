@@ -14,8 +14,34 @@ path = "src/main.rs"
 path = "src/lib.rs"
 
 [dependencies]
-# libsignal: dependência git pinada por commit (ADR-0001). Definida na bead da Fase 0.
-# libsignal-protocol = { git = "https://github.com/signalapp/libsignal", rev = "<COMMIT>" }
+# libsignal: dependência git pinada por commit (ADR-0001). Mesmo commit do falaai-core (tag
+# v0.105.4); ao atualizar, mudar os dois juntos e igualar rust-toolchain.toml ao da libsignal.
+libsignal-protocol = { git = "https://github.com/signalapp/libsignal", rev = "b2a5c30f3245c1bcad04b27b1e752a38321c793d" }
+# Mesma série da libsignal no commit pinado (os traits de RNG precisam coincidir).
+rand = "0.9.4"
+uuid = "1.28.0"
+# gRPC local (src/server.rs). prost na mesma série que a libsignal já trava.
+prost = "0.14.4"
+tonic = { version = "0.14", default-features = false, features = ["codegen", "router", "server", "transport"] }
+tonic-prost = "0.14"
+tokio = { version = "1", features = ["macros", "net", "rt-multi-thread", "signal"] }
+tokio-stream = { version = "0.1", default-features = false, features = ["net"] }
+base64 = "0.22"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0.154"
+thiserror = "2.0"
+zeroize = { version = "1.8.2", features = ["serde"] }
+
+[build-dependencies]
+tonic-prost-build = "0.14"
+
+[dev-dependencies]
+# Cliente gRPC nos testes de integração.
+tonic = { version = "0.14", default-features = false, features = ["channel", "codegen"] }
+hyper-util = { version = "0.1", features = ["tokio"] }
+tower = { version = "0.5", default-features = false, features = ["util"] }
+tempfile = "3.27.0"
+tokio = { version = "1", features = ["sync", "time"] }
 
 [lints.rust]
 unsafe_code = "deny"
@@ -30,8 +56,20 @@ print_stdout = "deny"
 todo = "warn"
 
 [profile.release]
+# A libsignal compila em release com overflow-checks, exceto nos crates de primitivas abaixo.
+# Perfis de dependências não se propagam; replicamos aqui (como no falaai-core).
+overflow-checks = true
 opt-level = "z"
 lto = true
 codegen-units = 1
 panic = "abort"
 strip = true
+
+[profile.release.package.curve25519-dalek]
+overflow-checks = false
+
+[profile.release.package.sha2]
+overflow-checks = false
+
+[profile.release.package.hmac]
+overflow-checks = false

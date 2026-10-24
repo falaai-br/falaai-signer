@@ -1,0 +1,11 @@
+# Contrato gRPC do falaai-signer, publicado para o `accounts` (Go) gerar o cliente com buf.
+# Mesmas regras do falaai-proto: lint STANDARD e breaking WIRE_JSON.
+version: v2
+modules:
+  - path: proto
+lint:
+  use:
+    - STANDARD
+breaking:
+  use:
+    - WIRE_JSON

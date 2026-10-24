@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+package falaai.signer.v1;
+
+// SignerService assina os certificados do sealed sender no formato da
+// libsignal (ADR-0011). Só o `accounts` chama este serviço, por gRPC em
+// loopback ou socket Unix no mesmo pod. O serviço não guarda estado nem
+// registra em log o ACI ou qualquer outro campo das requisições.
+//
+// O certificado do servidor (`ServerCertificate`) é assinado fora do serviço,
+// pela ferramenta `falaai-signer keygen`, com a chave privada do trust root.
+// O serviço só recebe o trust root público, o certificado do servidor e a
+// chave privada correspondente.
+service SignerService {
+  // Emite um `SenderCertificate` para um dispositivo, assinado pela chave do
+  // certificado do servidor, que vai embutido nele.
+  rpc SignSenderCertificate(SignSenderCertificateRequest) returns (SignSenderCertificateResponse);
+  // Devolve o trust root público, ao qual todo certificado emitido encadeia.
+  rpc GetTrustRoot(GetTrustRootRequest) returns (GetTrustRootResponse);
+}
+
+message SignSenderCertificateRequest {
+  // ACI do remetente: os 16 bytes do UUID, como em `Send.destination_aci` do
+  // falaai-proto. No certificado vai a forma textual (UUID minúsculo com
+  // hífens), que é o nome do `ProtocolAddress` da libsignal.
+  bytes aci = 1;
+  // Device id do remetente, de 1 a 127.
+  uint32 device_id = 2;
+  // Chave pública de identidade do dispositivo, serializada pela libsignal
+  // (33 bytes, com o byte de tipo).
+  bytes identity_key = 3;
+  // Validade em milissegundos desde a época Unix. Precisa estar no futuro e
+  // a no máximo 7 dias do instante da emissão; o `accounts` usa 24h.
+  uint64 expires_at = 4;
+}
+
+message SignSenderCertificateResponse {
+  // `SenderCertificate` serializado pela libsignal.
+  bytes certificate = 1;
+}
+
+message GetTrustRootRequest {}
+
+message GetTrustRootResponse {
+  // Chave pública do trust root, serializada pela libsignal (33 bytes, com o
+  // byte de tipo). É a mesma que vai embutida na build do app.
+  bytes public_key = 1;
+}

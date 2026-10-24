@@ -1,0 +1,16 @@
+{
+  "description": "SenderCertificate emitido pelo falaai-signer. Base64 padrão; tempos em ms desde a época Unix. Vale em validation_time e vence depois de expires_at. A identidade do remetente é só de teste.",
+  "expires_at": 1767312000000,
+  "libsignal_rev": "b2a5c30f3245c1bcad04b27b1e752a38321c793d",
+  "sender": {
+    "aci": "9d0652a3-dcc3-4d11-975f-74d61598733f",
+    "aci_bytes": "nQZSo9zDTRGXX3TWFZhzPw==",
+    "device_id": 2,
+    "identity_key": "BTAMq4HNIuNZOPT1XwXIaEo26TwriQFR0Y/R12kATJpi",
+    "identity_key_pair": "CiEFMAyrgc0i41k49PVfBchoSjbpPCuJAVHRj9HXaQBMmmISIIgra9fr6N6DzhS4pWCrFtIITynXV/tASonDqeTFZwpV"
+  },
+  "sender_certificate": "Cr8BEAIZAAQBfJsBAAAiIQUwDKuBzSLjWTj09V8FyGhKNuk8K4kBUdGP0ddpAEyaYippCiUIARIhBShRb3Gt00JuqxRcDc8N8DujuqewSd068H2zNwcvO61IEkBYxrDMzYuL3SNX5yc2mDdJ0p6L6wxQS27IG1lpOEjQJeTsSgE43p+3wtIUm1IODpt4stXSElvXXGhn/cyb2vGKMiQ5ZDA2NTJhMy1kY2MzLTRkMTEtOTc1Zi03NGQ2MTU5ODczM2YSQIW8dXZmJW8MiPP7pXgFdWZaPlA90WKsP8LvZO0xg4GuY7qcpbTnUjO57Rc0lj1t9thws+VbBxiPXwK2L5YkGII=",
+  "server_certificate_key_id": 1,
+  "trust_root": "Bc9BsJctyQxbqrzzkGzxUuWnr1RSSio4A8GC+zFZvW85",
+  "validation_time": 1767225600000
+}

@@ -5,14 +5,45 @@ CARGO_DENY_VERSION  ?= 0.20.2
 CARGO_AUDIT_VERSION ?= 0.22.2
 GITLEAKS_VERSION    ?= v8.28.0
 
-.PHONY: tools fmt lint test test-integration security build check check-fast
-tools: hooks ## Instala toolchain e ferramentas pinadas e ativa os hooks
+# protoc: exigido pelos build scripts da libsignal e pelo codegen do gRPC (build.rs). Instalado
+# em .tools/ com checksum verificado, como no falaai-core. O prost-build lê o caminho de PROTOC
+# (fixado em .cargo/config.toml); o PATH e o SHELL são refeitos aqui, depois dos de mk/hooks.mk
+# (o Make 3.81 do macOS só respeita o PATH passado pelo SHELL).
+PROTOC_VERSION := 36.2
+PROTOC_DIR     := .tools/protoc
+export PATH    := $(CURDIR)/$(PROTOC_DIR)/bin:$(PATH)
+SHELL          := env PATH=$(PATH) /bin/sh
+PROTOC_SHA256_osx-aarch_64   := 9cd98a532c5c5e0c4161314de0225de27e4c8a323917b6ea7b1b714d3ae23466
+PROTOC_SHA256_osx-x86_64     := 228cc7add4616cc14ca5e80dee83209d44449a7aee95a914ae748fa374efb078
+PROTOC_SHA256_linux-aarch_64 := 8b8f18bd2b30346efbc698dd5a73dd7c805f3ef8380f6dfc95c768f3f1852f6a
+PROTOC_SHA256_linux-x86_64   := 121f6c7afe1d4d0e3ea6aab9432038599250134cbf4474cb1167d2c7decd4278
+PROTOC_OS   := $(subst Darwin,osx,$(subst Linux,linux,$(shell uname -s)))
+PROTOC_ARCH := $(subst arm64,aarch_64,$(subst aarch64,aarch_64,$(shell uname -m)))
+PROTOC_PLATFORM := $(PROTOC_OS)-$(PROTOC_ARCH)
+
+.PHONY: tools protoc fmt lint vectors test test-integration security build check check-fast
+tools: hooks protoc ## Instala toolchain e ferramentas pinadas e ativa os hooks
 	@command -v rustup >/dev/null || { echo "instale rustup: https://rustup.rs"; exit 1; }
 	rustup show active-toolchain
 	rustup component add rustfmt clippy
 	cargo install --locked cargo-deny@$(CARGO_DENY_VERSION) cargo-audit@$(CARGO_AUDIT_VERSION)
 	@command -v go >/dev/null || { echo "instale Go (para o gitleaks): https://go.dev/dl"; exit 1; }
 	go install github.com/zricethezav/gitleaks/v8@$(GITLEAKS_VERSION)
+
+protoc: ## Baixa o protoc pinado para .tools/ (sha256 verificado)
+	@if [ "$$(cat $(PROTOC_DIR)/VERSION 2>/dev/null)" = "$(PROTOC_VERSION)" ]; then echo "protoc $(PROTOC_VERSION) já instalado"; else \
+	  set -e; \
+	  sum="$(PROTOC_SHA256_$(PROTOC_PLATFORM))"; \
+	  [ -n "$$sum" ] || { echo "plataforma sem protoc pinado: $(PROTOC_PLATFORM)"; exit 1; }; \
+	  zip="protoc-$(PROTOC_VERSION)-$(PROTOC_PLATFORM).zip"; \
+	  tmp="$$(mktemp -d)"; \
+	  curl -fsSL -o "$$tmp/$$zip" "https://github.com/protocolbuffers/protobuf/releases/download/v$(PROTOC_VERSION)/$$zip"; \
+	  echo "$$sum  $$tmp/$$zip" | shasum -a 256 -c -; \
+	  rm -rf $(PROTOC_DIR); mkdir -p $(PROTOC_DIR); \
+	  unzip -q "$$tmp/$$zip" -d $(PROTOC_DIR); rm -rf "$$tmp"; \
+	  echo "$(PROTOC_VERSION)" > $(PROTOC_DIR)/VERSION; \
+	  $(PROTOC_DIR)/bin/protoc --version; \
+	fi
 
 fmt: ## Formata
 	cargo fmt --all
@@ -24,8 +55,11 @@ lint: ## rustfmt check e clippy estrito
 test: ## Testes unitários
 	cargo test --lib --locked
 
-test-integration: ## Testes de integração (dois cores trocando mensagens, SQLCipher real)
+test-integration: ## Testes de integração (servidor gRPC real, certificado aberto por sealed_sender_decrypt)
 	cargo test --test '*' --locked
+
+vectors: ## Regera os vetores de certificado em testdata/vectors/; revise o diff antes de versionar
+	FALAAI_UPDATE_VECTORS=1 cargo test --test certificate_vectors --locked
 
 security: ## cargo-deny (licenças, advisories, fontes), cargo-audit, gitleaks
 	cargo deny --locked check
